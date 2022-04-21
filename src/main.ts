@@ -17,7 +17,14 @@ const {GITHUB_TOKEN, GITHUB_WORKSPACE} = process.env;
 export async function run(actionInput: input.Input): Promise<void> {
   try {
     const startedAt = new Date().toISOString();
-    const alertResp = await execa('vale', actionInput.args);
+
+    // (FORK) This is a hack to accommodate files modified before running Vale.
+    // Note this only works if the file's line numbers are not changed by the modifying function.
+    const modifiedArgs = actionInput.args.map(arg => arg.replace('.md', '.TEMP.md'));
+
+    const modifiedAlertResp = await execa('vale', modifiedArgs);
+    const alertResp = modifiedAlertResp.replaceAll('.TEMP.md', '.md');
+    // (ENDFORK)
 
     let runner = new CheckRunner(actionInput.files);
 
